@@ -3,7 +3,9 @@ require("wx.WxOptions")
 require("wx.login")
 require("common.ProtocolDefine")
 require("common.GlobalTask")
+require("common.config")
 require("json")
+
 server = nil
 
 function dispatchTask(data)
@@ -52,7 +54,7 @@ function doReceive(reads, clientFd)
 		local var
 		for var = 1, #jsdata do
 			ret, result = dispatchTask(jsdata[var])
-			if ret == -1 then
+			if ret == 2 then
 				break
 			end
 		end
@@ -93,10 +95,11 @@ function listenTask()
 end
 
 function doTask()
-	local jsdata = readFileString(getPath().."/res/task_cmd.json")
-	local tb_data = json.decode(dataA)
+--	local jsdata = readFileString(getPath().."/res/task_cmd.json")
+	local tb_data = g_tbl_task
 	local task_id = tb_data["task_id"]
-	local guid = readFileString(getPath().."/res/guid.txt")
+	local task_type = tb_data["task_type"]
+	local guid = readFileString(getPath().."/uuid.txt")
 	local var
 	local ret, result
 	local str_post
@@ -104,14 +107,20 @@ function doTask()
 	tb_data = tb_data["cmd"]
 	for var = 1, #tb_data do
 		ret, result = dispatchTask(tb_data[var]["op"])
-		if ret == -1 then
+		if ret == 2 then
 			break
 		end
 	end
 	result["task_id"] = task_id
 	result["guid"] = guid
+	if task_type == "wx_vote" and result["status"] == 1 then
+		result["snapshot_path"]=base64_encode_file(g_conf_wx_vote_s_snapshot_path)
+	end
+	toast(task_id)
 	str_post = json.encode(result)
-	postHttp("http://ip:3002/task_status", str_post)
+	sRet = postHttp(g_conf_task_result_url, str_post, {["Content-Type"] = "application/json",["Content-Length"] = #str_post})
+	sRet = sRet or "post failed"
+	log("post status("..tostring(result["status"]).."): "..sRet, "main")
 end
 
 function checkAbnormalActivity()
@@ -128,10 +137,10 @@ end
 function main()
 	init(0)
 	co_listen = coroutine.create(function()
-		listenTask()
+		doTask()
 	end)
 
-	--程序中对coMSleep函数进行修改，每次执行coMSleep后进行一次调度来检查弹框等信息
+	--程序中对mSleep函数进行修改，每次执行mSleep后进行一次调度来检查弹框等信息
 	while true do
 		if coroutine.status(co_listen) == "dead" then
 			break

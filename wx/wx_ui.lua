@@ -8,12 +8,19 @@ function WxUI:findUsrLoginUI()
 	x,y = findMultiColorInRegionFuzzy( 0xdcdcdc, "8|4|0x555555,21|7|0xadadad,69|-3|0x6d6d6d,71|5|0x545454,20|-110|0xcfcfd1,53|-94|0x2e2e32,88|-125|0x7c7c80,133|-113|0xbbbbbd", 90, 0, 0, 719, 1279)
 	if x ~= -1 and y ~= -1 then return true,x,y end
 	
+	x,y = findMultiColorInRegionFuzzy( 0xc9cbcc, "33|-7|0x14191a,68|-14|0x6d7274,80|-12|0xafb2b3,116|-14|0x939698,159|-9|0x838789,175|2|0x75797b,190|13|0x939698", 90, 0, 0, 719, 1279)
+	if x ~= -1 and y ~= -1 then return true,x,y end
+	
 	return false,-1,-1
 end
 
 function WxUI:findLoginFingerprintUI()
 	x,y = findMultiColorInRegionFuzzy( 0xfcfcfc, "20|-11|0x45c01a,24|-26|0x45c01a,24|-33|0xfcfcfc,21|10|0xfcfcfc,16|5|0x45c01a,28|19|0xfcfcfc,50|19|0xfcfcfc,41|32|0x45c01a", 90, 0, 0, 719, 1279)
 	if x ~= -1 and y ~= -1 then return true,x,y end
+	
+	--第一次下载微信登录时介绍微信界面，该界面是WeChat Out界面
+	x,y = findMultiColorInRegionFuzzy( 0x9edd9e, "-1|5|0xa3dfa3,22|0|0x6fcc6f,47|6|0x72cc71,58|3|0x3bb93a,83|-1|0xa0dd9f,129|12|0x35b734,110|-22|0x1aad19,95|110|0xbcc4d5", 90, 0, 0, 719, 1279)
+	if x ~= -1 and y ~= -1 then tap(355,1198) end
 	
 	return false,-1,-1
 end

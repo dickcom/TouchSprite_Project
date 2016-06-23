@@ -87,17 +87,18 @@ function GlobalTask:doTask(data)
 		ret, msg = self:resetImei(data[2])
 	end
 	
-	ret = ret and 0 or -1
+	ret = ret and 1 or 2
 	local pic_name
 	local tbl_response 
 	--如果执行失败保存当前页面截图
-	if ret == -1 then
+	toast(msg)
+	if ret == 2 then
 		pic_name = saveSnapshot()
 		tbl_response = {
-			["result"]=ret,
+			["status"]=ret,
 			["message"]=msg,
 			["cmd"]=cmd,
-			["snapshot"]=pic_name
+			["snapshot_path"]=base64_encode_file(pic_name)
 		}
 	else
 		tbl_response = {

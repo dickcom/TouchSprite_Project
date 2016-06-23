@@ -1,5 +1,4 @@
 require("login")
-require("log")
 require("ProtocolDefine")
 require("json")
 --require("wxAccount")
@@ -7,12 +6,10 @@ require("json")
 WxOptions = {}
 WxOptions.__index = WxOptions
 
-local wxlog = nil
 local wxLogin = nil
 function WxOptions:new()
 	local self = {}     
 	setmetatable(self, WxOptions)
-	wxlog = wxlog or Log:new("weixin")
 	return self  
 end
 
@@ -49,14 +46,11 @@ function WxOptions:login(strUsr, strPwd)
 		coMSleep(3000)
 	end
 	
-	wxlog:log(msg)
 	return ret, msg
 end
 
 function WxOptions:logout()
 	--设置界面
-	wxlog:log("登出")
---	wxLogin = wxLogin or WxLogin:new()
 	if wxLogin == nil or wxLogin.isLogined == false then
 		return true, "Quit succeeded"
 	end
@@ -86,7 +80,6 @@ end
 function WxOptions:addFriend(who)
 	local ret, msg
 	--添加朋友界面
-	wxlog:log("添加好友" .. who)
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.search.ui.FTSAddFriendUI")
 	coMSleep(300)
 	
@@ -109,28 +102,28 @@ function WxOptions:addFriend(who)
 		msg = "Add friend " .. who .. " failed"
 	end
 	
-	wxlog:log(msg)
 	return ret, msg
 end
 
 function WxOptions:addMP(name)
 	local ret, msg
 	
-	wxlog:log("添加公众号"..name)
+	log("添加公众号"..name, "weixin")
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.search.ui.FTSMainUI")
 	coMSleep(2000)
 	tap(561,375)	--点击公众号图标
-	coMSleep(2000)
+	coMSleep(3000)
 	inputText(name)	--搜索公众号
-	coMSleep(1000)
+	coMSleep(2000)
 	tap(368,75)	--焦点到输入框
 	coMSleep(2000)
 	tap(647, 1218)	--点击输入法搜索
 	coMSleep(5000)
 	tap(383,280)	--选择搜索到的第一行
-	coMSleep(1000)
+	coMSleep(2000)
+	moveTo(719,1096,719,150,10)
 	--查找关注按钮
-	ret,x,y = findColorInTime(1000, WxUI.findAddMpAddButton)
+	ret,x,y = findColorInTime(3000, WxUI.findAddMpAddButton)
 	if ret then
 		tap(x, y)
 		msg = "add MP succeeded"
@@ -138,17 +131,18 @@ function WxOptions:addMP(name)
 		coMSleep(6000)
 	else
 		--如果已经关注查找进入公众号
-		ret,x,y = findColorInTime(1000, WxUI.findAddMpEnterButton)
+		ret,x,y = findColorInTime(3000, WxUI.findAddMpEnterButton)
 		if ret then
 			ret = true
 			msg = "Already added the MP"
+			tap(x,y)
+			coMSleep(4000)
 		else
 			ret = false
 			msg = "Add MP failed"
 		end
 	end
 	
-	wxlog:log(msg)
 	return ret, msg
 end
 
@@ -178,7 +172,6 @@ function WxOptions:sendMsgCommon(message)
 end
 
 function WxOptions:sendMsg(to, message)
-	wxlog:log("发送消息'" .. message .."'给"..to)
 	--搜索常用联系人
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.search.ui.FTSMainUI")
 	coMSleep(2000)
@@ -193,7 +186,6 @@ end
 function WxOptions:sendGroupMsg(title, message)
 	local ret, msg
 	
-	wxlog:log("发送群消息'" .. message .."'给"..title)
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.search.ui.FTSMainUI")
 	coMSleep(2000)
 	inputText(title)
@@ -218,18 +210,15 @@ function WxOptions:sendGroupMsg(title, message)
 		end
 	end
 	
-	wxlog:log(msg)
 	return ret, msg
 end
 
 function WxOptions:createGroup(title, members)
 	local ret, msg
 	
-	wxlog:log("创建群聊"..title)
 	count = #members
 	if count < 2 then
 		msg = "Create group failed, people count must more than 2"
-		wxlog:log(msg)
 		return false, msg
 	end
 	
@@ -278,13 +267,11 @@ function WxOptions:createGroup(title, members)
 	coMSleep(1000)
 	
 	msg = "Create succeeded"
-	wxlog:log(msg)
 	return true, msg
 end
 
 function WxOptions:commentSNS(keyword, content)
 	local ret, msg
-	wxlog:log("评论朋友圈'".. keyword.. "'")
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.search.ui.FTSMainUI")
 	coMSleep(2000)
 	tap(156, 351)	--选择朋友圈
@@ -298,13 +285,11 @@ function WxOptions:commentSNS(keyword, content)
 	tap(289,368)	--选择搜索到的第一行
 	coMSleep(3000)
 	ret, msg = self:sendMsgCommon(content)
-	wxlog:log(msg)
 	return ret, msg
 end
 
 function WxOptions:upvoteSNS(keyword)
 	local ret, msg
-	wxlog:log("朋友圈点赞'".. keyword.. "'")
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.search.ui.FTSMainUI")
 	coMSleep(2000)
 	tap(156, 351)	--选择朋友圈
@@ -329,8 +314,7 @@ function WxOptions:upvoteSNS(keyword)
 		msg = "点赞失败"
 		ret = false
 	end
-	
-	wxlog:log(msg)
+
 	return ret, msg
 end
 
@@ -362,13 +346,18 @@ function WxOptions:clearRecorder(who)
 end
 
 function WxOptions:vote()
+	local ret, msg
 	func = dofile(getPath().."/lua/wx/wx_vote.lua")
-	return func()
+	ret,msg = func()
+	if ret then
+		saveSnapshot(g_conf_wx_vote_s_snapshot_path)
+	end
+	return ret, msg
 end
 
 function WxOptions:sendSNS(content)
 	local ret, msg
-	wxlog:log("发朋友圈")
+	log("发朋友圈", "weixin")
 
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.sns.ui.SnsTimeLineUI")
 	--查找右上角摄像头
@@ -408,7 +397,7 @@ function WxOptions:sendSNS(content)
 end
 
 function WxOptions:updateNickname(name)
-	wxlog:log("更改昵称为"..name)
+	log("更改昵称为"..name, "weixin")
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.setting.ui.setting.SettingsModifyNameUI")
 	--判断是否是更改名字页面
 	ret,x,y = findColorInTime(3000, WxUI.findSettingModifyNameUI)
@@ -430,7 +419,7 @@ function WxOptions:updateNickname(name)
 end
 
 function WxOptions:addNearFriend()
-	wxlog:log("通过附近的人添加好友")
+	log("通过附近的人添加好友", "weixin")
 ::LabelA::
 	os.execute("am start --activity-no-history com.tencent.mm/.ui.account.LoginFingerprintUI");
 	coMSleep(2000)
@@ -516,7 +505,7 @@ function WxOptions:addNearFriend()
 end
 
 function WxOptions:updateSex(sex)
-	wxlog:log("更改性别为"..sex)
+	log("更改性别为"..sex, "weixin")
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.setting.ui.setting.SettingsPersonalInfoUI")
 	
 	--性别
@@ -535,7 +524,7 @@ function WxOptions:updateSex(sex)
 end
 
 function WxOptions:randomSendMsg(message)
-	wxlog:log("随机给好友发消息")
+	log("随机给好友发消息", "weixin")
 	os.execute("am start --activity-no-history com.tencent.mm/.ui.account.LoginFingerprintUI");
 	coMSleep(2000)
 	tap(263,1224)	--点击通讯录
@@ -587,7 +576,6 @@ function WxOptions:randomSendMsg(message)
 end
 
 function WxOptions:randomSendSNS()
-	wxlog:log("随机发朋友圈")
 	if not isFileExist("/mnt/sdcard/TouchSprite/res/sns_msg.txt") then 
 		return false, "/mnt/sdcard/TouchSprite/res/sns_msg.txt文件不存在"
 	end
@@ -725,18 +713,20 @@ function WxOptions:saveCache()
 	--为了不使权限发生变化且能够判断文件存在，
 	--所以把缓存文件复制到/data目录下并同时在sdcard下建立同样的文件夹
 	--这样只要判断sdcard下的文件夹是否存在就行
+	mSleep(4000)
+	closeApp("com.tencent.mm")
+	mSleep(3000)
 	
 	local cache_file = "/data/mpsp/com.tencent.mm/"..wxLogin.strCurUsr
 	local sdcard_cache_dir = "/sdcard/mpsp/com.tencent.mm/"..wxLogin.strCurUsr
 	
-	coMSleep(8000)
-	
 	os.execute("rm -fr "..cache_file)
+	mSleep(200)
 	os.execute("mkdir -p "..cache_file)
+	mSleep(200)
 	os.execute("cp -a /data/data/com.tencent.mm/* "..cache_file)
 	os.execute("mkdir -p "..sdcard_cache_dir)
 	coMSleep(2000)
-	toast("Save cache succeeded")
 	return true, "Save cache succeeded"
 end
 
@@ -771,7 +761,6 @@ function WxOptions:openUrlByWx(url)
 end
 
 function WxOptions:setArea()
-	wxlog:log("更改地区")
 	os.execute("am start --activity-no-history com.tencent.mm/.plugin.setting.ui.setting.SettingsPersonalInfoUI")
 
 	ret,x,y = findColorInTime(3000, WxUI.findSettingSetArea)
@@ -790,7 +779,6 @@ function WxOptions:doTask(data)
 	local ret, msg
 	local index = 1
 	
-	wxlog = wxlog or Log:new("weixin")
 	if cmd == CMD_WX_LOGIN then
 		ret, msg = self:login(data[2], data[3], data[4])
 	elseif cmd == CMD_WX_REGISTER then
@@ -854,25 +842,27 @@ function WxOptions:doTask(data)
 		until (true)
 	end
 	
-	ret = ret and 0 or -1
+	ret = ret and 1 or 2
 	local pic_name
 	local tbl_response 
 	--如果执行失败保存当前页面截图
-	if ret == -1 then
+	toast(msg)
+	if ret == 2 then
 		pic_name = saveSnapshot()
 		tbl_response = {
-			["result"]=ret,
+			["status"]=ret,
 			["message"]=msg,
 			["cmd"]=cmd,
-			["snapshot"]=pic_name --base64_encode_file(pic_name)
+			["snapshot_path"]=base64_encode_file(pic_name)
 		}
+		if wxLogin.isLogined then
+			self:saveCache()
+		end
 	else
 		tbl_response = {
-			["result"]=ret
+			["status"]=ret
 		}
 	end
 	
-	wxlog:close()
-	wxlog = nil
 	return ret, tbl_response
 end

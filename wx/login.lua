@@ -86,8 +86,8 @@ function WxLogin:loginByCache(cache_file, strCurUsr, strCurPwd)
 	runApp("com.tencent.mm")
 	mSleep(3000)
 	--判断是否登录成功，失败则输入用户名密码进行登录
-	x,y = findMultiColorInRegionFuzzyInTime( 0xfcfcfc, "20|-11|0x45c01a,24|-26|0x45c01a,24|-33|0xfcfcfc,21|10|0xfcfcfc,16|5|0x45c01a,28|19|0xfcfcfc,50|19|0xfcfcfc,41|32|0x45c01a", 90, 0, 0, 719, 1279, 12000)
-	if x == -1 or y == -1 then
+	ret,x,y = findColorInTime(12000, WxUI.findLoginFingerprintUI)
+	if ret == false then
 		return self:loginByInput(strCurUsr, strCurPwd)
 	end
 	
@@ -147,6 +147,7 @@ function WxLogin:loginByInput(strCurUsr, strCurPwd)
 	
 	if isLoginUI == false then
 		self.isLogined = false
+		toast("未找到登录页面")
 		return false, "未找到登录页面"
 	end
 	self.strCurUsr = strCurUsr

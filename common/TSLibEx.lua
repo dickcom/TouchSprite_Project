@@ -1,3 +1,5 @@
+local http = require("socket.http")
+
 function findMultiColorInRegionFuzzyInTime(p1,p2,p3,p4,p5,p6,p7,p8)
 	local var
 	local count
@@ -40,11 +42,15 @@ function delText(count)
 	end
 end
 
-function saveSnapshot()
+function saveSnapshot(path)
 --	local date = os.date("%Y-%m-%d")
 --	local time = os.date("%H_%M_%S")
 --	local dir_name = getPath().."/res/snapshot/"..date
-	local pic_name = "/sdcard/tmp/snapshot.png"
+	local pic_name = path
+	if path == nil then
+		pic_name = "/sdcard/tmp/snapshot.png"
+	end
+
 --	os.execute("mkdir -p "..dir_name)
 	snapshot(pic_name, 0, 0, 719, 1279)
 	return pic_name
@@ -119,9 +125,10 @@ function base64_decode(str64)
     return str
 end
 
-function base64_encode_file(file)
-	data = readFileString(file)
-	return base64_encode(data)
+function base64_encode_file(path)
+	os.execute("base64 "..path.." > /sdcard/tmp/base64_file.tmp")
+	mSleep(1500)
+	return readFileString("/sdcard/tmp/base64_file.tmp")
 end
 
 
@@ -137,20 +144,6 @@ end
 function coMSleep(ms)
 	mSleep(ms)
 	coroutine.yield()
---	local count
---	count = ms/1000
---	if count == 0 then 
---		coroutine.yield()
---		mSleep(ms)
---	end
---	for var = 1, count do
---		coroutine.yield()
---		mSleep(1000)
---		ms = ms - 1000
---		if ms < 1000 then
---			mSleep(ms)
---		end
---	end
 end
 
 --获取最上层Activity
@@ -180,98 +173,36 @@ function tempFile(fn)
 
 end
 
---GetHttp [可自定义头信息]
-function getHttp(url, t,header)
-	local iRet, sRet = pcall(function()
-		local path = tempFile("GET") 
-		if t == null then t = 8 end 
-		if header == nil then
-			os.execute(string.format("curl --connect-timeout %s  -o %s '%s' ",t,path,url))
-		else
-			os.execute(string.format("curl --connect-timeout %s -H %s -o %s '%s'",t,header,path,url))
-		end 
-		result = readfile(path,1)
-		return result
-	end)
-	if iRet == true then
-		return sRet
-	else
-		return ""
-	end
+--GetHttp
+function getHttp(url)
+	local res, code = http.request(url)
+	return res
 end
 
 --GetHttp 下载文件
-function getHttpFile(url, filepath, header)
-	local iRet, sRet = pcall(function()
-		if header == null then
-			os.execute(string.format("curl -o %s '%s' ",filepath, url))
-		else
-			os.execute(string.format("curl -o %s -H %s '%s' ",filepath, header,url))
-		end
-	end)
-	if iRet == true then
-		return sRet
-	else
-		return ""
+function getHttpFile(url, filepath)
+	local res, code = http.request(url)
+	if res ~= nil then
+		writeFileString(filepath, res)
 	end
+	return res ~= nil
 end
 
 --PostHttp [可自定义头信息]
-function postHttp(url,post, t,header)
-	local iRet, sRet = pcall(function()
-		local path = tempFile("POST") 
-		if t == null then t = 8 end 
-		if header == null then
-			os.execute(string.format("curl -o %s -d '%s' --connect-timeout %s '%s'",path,post,t,url))
-		else 
-			os.execute(string.format("curl -o %s --data-urlencode '%s' --connect-timeout %s -H %s '%s'",path,post,t,header,url))
-		end 
-		result = readfile(path)
-		return result
-	end)
-	if iRet == true then
-		return sRet
-	else
-		return ""
-	end
-end 
+function postHttp(url,post_data,table_headers)
+	local res, code
+	local response_body = {}
+	res, code = http.request{  
+		url = url,  
+		method = "POST",  
+		headers = table_headers,  
+		source = ltn12.source.string(post_data),  
+		sink = ltn12.sink.table(response_body)  
+	}
 
---Post提交信息，可附带cookie信息
-function postHttpC(url,post,cookie_path ,t,header)
-	local iRet, sRet = pcall(function()
-		local path = tempFile("POST")
-		if t == null then t = 8 end 
-		if header == null then
-			os.execute(string.format("curl -o %s -d '%s' -b '%s' --connect-timeout %s '%s'",path,post,cookie_path,t,url))
-		else 
-			os.execute(string.format("curl -o %s -d '%s' -b '%s' --connect-timeout %s -H % '%s'",path,post,cookie_path,t,header,url))
-		end 
-		result = readfile(path)
-		return result
-	end)
-	if iRet == true then
-		return sRet
-	else
-		return ""
+	if res ~= nil then
+		return response_body[1]
 	end
-end 
-
---GET提交信息，可附带cookie信息
-function getHttpC(url,cookie_path ,t,header)
-	local iRet, sRet = pcall(function()
-		local path = tempFile("GET") 
-		if t == null then t = 8 end 
-		if header == null then
-			os.execute(string.format("curl -o %s -b '%s' --connect-timeout %s '%s'",path,cookie_path,t,url))
-		else 
-			os.execute(string.format("curl -o %s -b '%s' --connect-timeout %s -H % '%s'",path,cookie_path,t,header,url))
-		end 
-		result = readfile(path)
-		return result
-	end)
-	if iRet == true then
-		return sRet
-	else
-		return ""
-	end
+	
+	return nil
 end 
